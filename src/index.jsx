@@ -343,7 +343,7 @@ export default createReactClass({
     if (this.props.value && this.props.defaultValue) {
       throw new Error('Conflicting DatePicker properties \'value\' and \'defaultValue\'');
     }
-    const state = this.makeDateValues(this.props.value || this.props.defaultValue);
+    const state = this.makeDateValues(this.props.value || this.props.defaultValue, this.props.minDate, this.props.maxDate);
     if (this.props.weekStartsOn > 1) {
       state.dayLabels = this.props.dayLabels
         .slice(this.props.weekStartsOn)
@@ -360,24 +360,26 @@ export default createReactClass({
     return state;
   },
 
-  makeDateValues(isoString) {
+  makeDateValues(isoString, minDateString, maxDateString) {
     let displayDate;
     const selectedDate = isoString ? new Date(`${isoString.slice(0,10)}T12:00:00.000Z`) : null;
-    const minDate = this.props.minDate ? new Date(`${isoString.slice(0,10)}T12:00:00.000Z`) : null;
-    const maxDate = this.props.maxDate ? new Date(`${isoString.slice(0,10)}T12:00:00.000Z`) : null;
+    const minDate = minDateString ? new Date(`${minDateString.slice(0,10)}T12:00:00.000Z`) : null;
+    const maxDate = maxDateString ? new Date(`${maxDateString.slice(0,10)}T12:00:00.000Z`) : null;
 
     const inputValue = isoString ? this.makeInputValueString(selectedDate) : null;
     if (selectedDate) {
       displayDate = new Date(selectedDate);
     } else {
       const today = new Date(`${(new Date().toISOString().slice(0,10))}T12:00:00.000Z`);
-      if (minDate && Date.parse(minDate) >= Date.parse(today)){
+
+      if (minDate && minDate.getTime() >= today.getTime()) {
         displayDate = minDate;
-      } else if (maxDate && Date.parse(maxDate) <= Date.parse(today)){
+      } else if (maxDate && maxDate.getTime() <= today.getTime()) {
         displayDate = maxDate;
       } else {
         displayDate = today;
       }
+
     }
 
     return {
@@ -393,7 +395,7 @@ export default createReactClass({
       this.props.onClear();
     }
     else {
-      this.setState(this.makeDateValues(null));
+      this.setState(this.makeDateValues(null, this.props.minDate, this.props.maxDate));
     }
 
     if (this.props.onChange) {
@@ -622,8 +624,8 @@ export default createReactClass({
 
   componentWillReceiveProps(newProps) {
     const value = newProps.value;
-    if (this.getValue() !== value) {
-      this.setState(this.makeDateValues(value));
+    if (this.getValue() !== value || this.props.minDate !== newProps.minDate || this.props.maxDate !== newProps.maxDate) {
+      this.setState(this.makeDateValues(value, newProps.minDate, newProps.maxDate));
     }
   },
 
